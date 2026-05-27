@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+previews:
+  generation: off
+
+projects:
+  - name: sim-render-template
+    environments:
+      - name: production
+        services:
+          - type: web
+            name: simstudio
+            runtime: docker
+            plan: standard
+            region: oregon
+            dockerfilePath: ./Dockerfile
+            dockerContext: .
+            preDeployCommand: cd /migrations/packages/db && bun run db:migrate
+            healthCheckPath: /api/health
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: simstudio-db
+                  property: connectionString
+              - key: BETTER_AUTH_URL
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: NEXT_PUBLIC_APP_URL
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: NEXT_PUBLIC_SOCKET_URL
+                fromService:
+                  type: web
+                  name: simstudio-realtime
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: SOCKET_SERVER_URL
+                fromService:
+                  type: web
+                  name: simstudio-realtime
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: BETTER_AUTH_SECRET
+                generateValue: true
+              - key: INTERNAL_API_SECRET
+                generateValue: true
+              - key: ENCRYPTION_KEY
+                sync: false
+              - key: API_ENCRYPTION_KEY
+                sync: false
+              - key: COPILOT_API_KEY
+                sync: false
+              - key: ADMISSION_GATE_MAX_INFLIGHT
+                value: "500"
+
+          - type: web
+            name: simstudio-realtime
+            runtime: image
+            plan: starter
+            region: oregon
+            image:
+              url: ghcr.io/simstudioai/realtime:latest
+            healthCheckPath: /health
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: simstudio-db
+                  property: connectionString
+              - key: BETTER_AUTH_URL
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: NEXT_PUBLIC_APP_URL
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: ALLOWED_ORIGINS
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: RENDER_EXTERNAL_URL
+              - key: BETTER_AUTH_SECRET
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: BETTER_AUTH_SECRET
+              - key: INTERNAL_API_SECRET
+                fromService:
+                  type: web
+                  name: simstudio
+                  envVarKey: INTERNAL_API_SECRET
+
+        databases:
+          - name: simstudio-db
+            databaseName: simstudio
+            user: simstudio
+            plan: basic-256mb
+            region: oregon
+            postgresMajorVersion: "18"

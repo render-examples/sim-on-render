@@ -1,0 +1,11 @@
+.git
+.upstream-tmp
+assets
+README.md
+LICENSE
+.env
+.env.*
+!.env.example
+node_modules
+*.log
+.DS_Store
