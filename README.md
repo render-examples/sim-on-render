@@ -47,7 +47,9 @@ flowchart LR
   user["Browser user"] --> app["simstudio web service"]
   user --> realtime["simstudio-realtime web service"]
   app --> db[("simstudio-db Postgres")]
+  app --> redis[("simstudio-redis Key Value")]
   realtime --> db
+  realtime --> redis
   app --> realtime
 ```
 
@@ -55,6 +57,7 @@ flowchart LR
 |----------|------|------|---------|
 | `simstudio` | Web service, Docker wrapper | `standard` | Runs the Sim Next.js app and migrations |
 | `simstudio-realtime` | Web service, image | `starter` | Runs the Socket.IO realtime server |
+| `simstudio-redis` | Key Value | `starter` | Stores realtime and Copilot stream state |
 | `simstudio-db` | PostgreSQL 18 | `basic-256mb` | Stores users, workspaces, workflows, and knowledge metadata |
 
 Region: `oregon`. Change every `region` value in `render.yaml` before the first deploy if you need a different region. Database region is immutable after creation.
@@ -78,8 +81,12 @@ You set these in the Render Dashboard during the Blueprint Apply step.
 |---------|---------------|---------------|
 | `ENCRYPTION_KEY` | Encrypts stored workflow credentials and other sensitive values | Run `openssl rand -hex 32` |
 | `API_ENCRYPTION_KEY` | Encrypts API keys stored by Sim | Run `openssl rand -hex 32` |
+| `OPENAI_API_KEY` | Optional OpenAI key for agent blocks and embeddings | Create an OpenAI API key, or leave blank |
+| `ANTHROPIC_API_KEY_1` | Optional Anthropic Claude key for agent blocks | Create an Anthropic API key, or leave blank |
+| `GEMINI_API_KEY_1` | Optional Google Gemini key for agent blocks | Create a Gemini API key, or leave blank |
+| `MISTRAL_API_KEY` | Optional Mistral key for OCR and agent blocks | Create a Mistral API key, or leave blank |
 
-Both values must be 64-character hex strings. Do not use Render's generated secret format for these keys because Sim expects hex.
+`ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` must be 64-character hex strings. Do not use Render's generated secret format for these keys because Sim expects hex. The provider keys are optional; leave unused providers blank.
 
 Generate them locally before you apply the Blueprint:
 
@@ -106,6 +113,7 @@ The Blueprint wires these values from other Render resources. You do not type th
 | Env var | Source |
 |---------|--------|
 | `DATABASE_URL` | `simstudio-db.connectionString` |
+| `REDIS_URL` | `simstudio-redis.connectionString` |
 | `NEXT_PUBLIC_APP_URL` | `simstudio.RENDER_EXTERNAL_URL` |
 | `BETTER_AUTH_URL` | `simstudio.RENDER_EXTERNAL_URL` |
 | `NEXT_PUBLIC_SOCKET_URL` | `simstudio-realtime.RENDER_EXTERNAL_URL` |
@@ -123,9 +131,24 @@ Common things people change after deploying:
 | `DISABLE_AUTH` | Empty | Bypasses authentication for private, trusted deployments |
 | `TRUSTED_ORIGINS` | Empty | Adds extra auth origins, such as custom domain aliases |
 | `OLLAMA_URL` | Empty | Points Sim at an Ollama server for local models |
-| `REDIS_URL` | Empty | Enables Redis-backed realtime state for multi-instance scaling |
+| `REDIS_URL` | Wired automatically | Enables realtime and Copilot stream state |
 
 Add optional env vars after the first deploy from the service's **Environment** page.
+
+### AI provider keys
+
+Add model provider keys to the `simstudio` service after deploy. Sim uses these keys for agent blocks, knowledge-base embeddings, and provider-specific model access.
+
+| Env var | Provider |
+|---------|----------|
+| `OPENAI_API_KEY` or `OPENAI_API_KEY_1` | OpenAI |
+| `ANTHROPIC_API_KEY_1` | Anthropic Claude |
+| `GEMINI_API_KEY_1` | Google Gemini |
+| `MISTRAL_API_KEY` | Mistral |
+| `OLLAMA_URL` | Ollama |
+| `VLLM_BASE_URL` | vLLM or another OpenAI-compatible server |
+
+For multiple OpenAI, Anthropic, or Gemini keys, add numbered suffixes such as `_1`, `_2`, and `_3`. See Sim's [environment variables](https://docs.sim.ai/self-hosting/environment-variables) reference for the full provider list.
 
 Full upstream configuration reference: [Sim self-hosting docs](https://docs.sim.ai/self-hosting/docker).
 
@@ -135,14 +158,15 @@ Full upstream configuration reference: [Sim self-hosting docs](https://docs.sim.
 |----------|------|--------------|
 | `simstudio` | `standard` | $25 |
 | `simstudio-realtime` | `starter` | $7 |
+| `simstudio-redis` | `starter` | $10 |
 | `simstudio-db` | `basic-256mb` | $6 |
-| **Total** | | **$38** |
+| **Total** | | **$48** |
 
 Render's full pricing: [render.com/pricing](https://render.com/pricing).
 
 **Cheaper:** You can try `starter` for `simstudio`, but expect memory pressure on larger workflows. Do not use the free plan for this template.
 
-**Scale up:** Increase the `simstudio` plan first. Add Redis only when you scale realtime beyond one instance.
+**Scale up:** Increase the `simstudio` plan first. Scale Key Value if Copilot or realtime traffic grows.
 
 ## Customization
 
@@ -191,7 +215,7 @@ This template sets `previews.generation: off` because gallery deployments are on
 
 ### Backups
 
-Render backs up the managed PostgreSQL database according to the database plan. The template does not create a disk, so all persistent application data should live in Postgres or external providers configured by Sim.
+Render backs up the managed PostgreSQL database according to the database plan. Key Value is used for stream and realtime state, not as the source of truth for workflows.
 
 ### Monitoring
 
@@ -199,7 +223,7 @@ Use the Render Dashboard metrics and logs for both web services. The app health 
 
 ### Scaling
 
-Scale `simstudio` vertically first. Keep `simstudio-realtime` at one instance unless you add Redis, because it stores room state in memory by default.
+Scale `simstudio` vertically first. Key Value is already wired so `simstudio-realtime` can use Redis-backed room state.
 
 ### Logs
 
@@ -284,7 +308,7 @@ You lose Sim data after the database and its retained backups are gone. Export f
 
 ## Caveats and Limitations
 
-- The default realtime service is single-instance. Add Redis before scaling it horizontally.
+- Key Value is required for Copilot stream durability and realtime state.
 - The template uses upstream `latest` tags by default. Pin tags for production change control.
 - The app plan starts at `standard`. Downgrading can produce startup OOMs or health check failures.
 - `ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` are manual because Sim requires 64-character hex strings.
