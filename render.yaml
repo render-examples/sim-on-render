@@ -52,8 +52,6 @@ projects:
                 sync: false
               - key: API_ENCRYPTION_KEY
                 sync: false
-              - key: COPILOT_API_KEY
-                sync: false
               - key: ADMISSION_GATE_MAX_INFLIGHT
                 value: "500"
 

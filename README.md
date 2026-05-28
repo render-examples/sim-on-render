@@ -6,8 +6,6 @@
 
 This template deploys the open-source [Sim](https://github.com/simstudioai/sim) platform using the upstream container images and a Render-managed PostgreSQL database. It is for teams that want a self-hosted Sim workspace without running Docker Compose, managing Postgres, or copying service URLs between containers.
 
-![Sim workflow builder screenshot](./assets/hero.png)
-
 ## Table of Contents
 
 - [Why Deploy Sim on Render](#why-deploy-sim-on-render)
@@ -65,9 +63,9 @@ Region: `oregon`. Change every `region` value in `render.yaml` before the first 
 
 1. Click **[Deploy to Render](https://render.com/deploy-template/api/github/start?template_repo=sim-on-render)**.
 2. Choose the GitHub account or organization that should receive the fork.
-3. In the Blueprint Apply form, set `ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` to 64-character hex strings from `openssl rand -hex 32`.
-4. Optionally set `COPILOT_API_KEY` if you already created one at [sim.ai](https://sim.ai).
-5. Apply the Blueprint and wait for the first image pull, database migration, and service deploys. The first deploy usually takes 5 to 10 minutes.
+3. Generate two 64-character hex strings with `openssl rand -hex 32`, then paste one into `ENCRYPTION_KEY` and the other into `API_ENCRYPTION_KEY`.
+4. Apply the Blueprint and wait for the first image pull, database migration, and service deploys. The first deploy usually takes 5 to 10 minutes.
+5. Optionally add `COPILOT_API_KEY` after deploy if you created one at [sim.ai](https://sim.ai).
 6. Open the `simstudio` `*.onrender.com` URL when the service is live.
 
 ## Configuration
@@ -82,6 +80,15 @@ You set these in the Render Dashboard during the Blueprint Apply step.
 | `API_ENCRYPTION_KEY` | Encrypts API keys stored by Sim | Run `openssl rand -hex 32` |
 
 Both values must be 64-character hex strings. Do not use Render's generated secret format for these keys because Sim expects hex.
+
+Generate them locally before you apply the Blueprint:
+
+```bash
+openssl rand -hex 32 # use for ENCRYPTION_KEY
+openssl rand -hex 32 # use for API_ENCRYPTION_KEY
+```
+
+Each command prints a different 64-character value. Paste the first value into `ENCRYPTION_KEY` and the second value into `API_ENCRYPTION_KEY` in the Render Blueprint Apply form.
 
 ### Auto-Generated Secrets
 
@@ -117,6 +124,8 @@ Common things people change after deploying:
 | `TRUSTED_ORIGINS` | Empty | Adds extra auth origins, such as custom domain aliases |
 | `OLLAMA_URL` | Empty | Points Sim at an Ollama server for local models |
 | `REDIS_URL` | Empty | Enables Redis-backed realtime state for multi-instance scaling |
+
+Add optional env vars after the first deploy from the service's **Environment** page.
 
 Full upstream configuration reference: [Sim self-hosting docs](https://docs.sim.ai/self-hosting/docker).
 
