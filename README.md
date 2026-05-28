@@ -2,7 +2,7 @@
 
 > Deploy Sim with its app, realtime socket server, and Postgres database on Render.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy-template/api/github/start?template_repo=sim-render-template)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy-template/api/github/start?template_repo=sim-on-render)
 
 This template deploys the open-source [Sim](https://github.com/simstudioai/sim) platform using the upstream container images and a Render-managed PostgreSQL database. It is for teams that want a self-hosted Sim workspace without running Docker Compose, managing Postgres, or copying service URLs between containers.
 
@@ -63,7 +63,7 @@ Region: `oregon`. Change every `region` value in `render.yaml` before the first 
 
 ## Quickstart
 
-1. Click **[Deploy to Render](https://render.com/deploy-template/api/github/start?template_repo=sim-render-template)**.
+1. Click **[Deploy to Render](https://render.com/deploy-template/api/github/start?template_repo=sim-on-render)**.
 2. Choose the GitHub account or organization that should receive the fork.
 3. In the Blueprint Apply form, set `ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` to 64-character hex strings from `openssl rand -hex 32`.
 4. Optionally set `COPILOT_API_KEY` if you already created one at [sim.ai](https://sim.ai).
