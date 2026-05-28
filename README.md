@@ -81,12 +81,13 @@ You set these in the Render Dashboard during the Blueprint Apply step.
 |---------|---------------|---------------|
 | `ENCRYPTION_KEY` | Encrypts stored workflow credentials and other sensitive values | Run `openssl rand -hex 32` |
 | `API_ENCRYPTION_KEY` | Encrypts API keys stored by Sim | Run `openssl rand -hex 32` |
+| `COPILOT_API_KEY` | Optional key for Sim's built-in Copilot chat | Generate one in Sim Cloud, or leave blank |
 | `OPENAI_API_KEY` | Optional OpenAI key for agent blocks and embeddings | Create an OpenAI API key, or leave blank |
 | `ANTHROPIC_API_KEY_1` | Optional Anthropic Claude key for agent blocks | Create an Anthropic API key, or leave blank |
 | `GEMINI_API_KEY_1` | Optional Google Gemini key for agent blocks | Create a Gemini API key, or leave blank |
 | `MISTRAL_API_KEY` | Optional Mistral key for OCR and agent blocks | Create a Mistral API key, or leave blank |
 
-`ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` must be 64-character hex strings. Do not use Render's generated secret format for these keys because Sim expects hex. The provider keys are optional; leave unused providers blank.
+`ENCRYPTION_KEY` and `API_ENCRYPTION_KEY` must be 64-character hex strings. Do not use Render's generated secret format for these keys because Sim expects hex. `COPILOT_API_KEY` and provider keys are optional; leave unused features blank.
 
 Generate them locally before you apply the Blueprint:
 
@@ -126,7 +127,6 @@ Common things people change after deploying:
 
 | Env var | Default | What it does |
 |---------|---------|--------------|
-| `COPILOT_API_KEY` | Empty | Enables Sim-managed Copilot features for self-hosted installs |
 | `ADMISSION_GATE_MAX_INFLIGHT` | `500` | Caps concurrent workflow admissions in the app |
 | `DISABLE_AUTH` | Empty | Bypasses authentication for private, trusted deployments |
 | `TRUSTED_ORIGINS` | Empty | Adds extra auth origins, such as custom domain aliases |
@@ -135,9 +135,13 @@ Common things people change after deploying:
 
 Add optional env vars after the first deploy from the service's **Environment** page.
 
+### Copilot chat key
+
+Sim's built-in Copilot chat is separate from workflow model provider keys. To use the Copilot chat in a self-hosted install, set `COPILOT_API_KEY` on the `simstudio` service. Generate the key from Sim Cloud's Copilot settings. If this value is missing or invalid, Copilot chat requests fail with a `401` from `/api/mothership/chat`.
+
 ### AI provider keys
 
-Add model provider keys to the `simstudio` service after deploy. Sim uses these keys for agent blocks, knowledge-base embeddings, and provider-specific model access.
+Add model provider keys to the `simstudio` service during Blueprint setup or after deploy. Sim uses these keys for workflow agent blocks, knowledge-base embeddings, and provider-specific model access. These keys do not enable the built-in Copilot chat; use `COPILOT_API_KEY` for that.
 
 | Env var | Provider |
 |---------|----------|
