@@ -55,7 +55,7 @@ flowchart LR
 |----------|------|------|---------|
 | `simstudio` | Web service, Docker wrapper | `standard` | Runs the Sim Next.js app and migrations |
 | `simstudio-realtime` | Web service, image | `starter` | Runs the Socket.IO realtime server |
-| `simstudio-db` | PostgreSQL 17 | `basic-256mb` | Stores users, workspaces, workflows, and knowledge metadata |
+| `simstudio-db` | PostgreSQL 18 | `basic-256mb` | Stores users, workspaces, workflows, and knowledge metadata |
 
 Region: `oregon`. Change every `region` value in `render.yaml` before the first deploy if you need a different region. Database region is immutable after creation.
 
@@ -224,6 +224,10 @@ The GHCR image tag might be unavailable, mistyped, or temporarily unreachable. C
 ### Service Starts but Health Check Fails
 
 Check the service logs first. Common causes are a missing 64-character `ENCRYPTION_KEY`, a failed database migration, or an app plan that is too small for startup memory.
+
+### Migration Fails on `vector` Type or Extension
+
+Sim uses pgvector for knowledge-base embeddings. The pre-deploy command runs `CREATE EXTENSION IF NOT EXISTS vector` before migrations. If you created the database outside this template, enable pgvector manually with `CREATE EXTENSION IF NOT EXISTS vector;`, then redeploy.
 
 ### `ENCRYPTION_KEY must be set to a 64-character hex string`
 

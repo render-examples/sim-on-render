@@ -15,7 +15,7 @@ projects:
             region: oregon
             dockerfilePath: ./Dockerfile
             dockerContext: .
-            preDeployCommand: cd /migrations/packages/db && bun run db:migrate
+            preDeployCommand: sim-predeploy
             healthCheckPath: /api/health
             envVars:
               - key: NODE_ENV
